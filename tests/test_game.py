@@ -40,7 +40,7 @@ class BaseTestChessGame(unittest.TestCase):
         moves = self.get_moves(row, col)
         self.assertEqual(len(moves), expected_number)
 
-    def assert_piece_moved(self, start_row: int, start_col: int, target_row: int, target_col: int, piece_type):
+    def assert_piece_moved(self, start_row: int, start_col: int, target_row: int, target_col: int, piece_type, expect_checkmate: bool = False):
         moved_piece = self.game.board[start_row][start_col]
         self.assertIsNotNone(moved_piece)
         self.move_piece(start_row, start_col, target_row, target_col)
@@ -51,6 +51,7 @@ class BaseTestChessGame(unittest.TestCase):
         self.assertEqual(
             self.game.board[target_row][target_col].colour, moved_piece.colour)
         self.assertIsNone(self.game.board[start_row][start_col])
+        self.assertEqual(self.game.is_checkmate, expect_checkmate)
 
 
 class TestChessGameFlow(BaseTestChessGame):
@@ -175,9 +176,9 @@ class TestChessGameFlow(BaseTestChessGame):
         self.move_piece(0, 6, 2, 5)
         self.assertFalse(self.game.is_checkmate)
         # 4W Qxf7#
-        self.move_piece(3, 7, 1, 5)
-        self.assertTrue(self.game.is_checkmate)
+        self.assert_piece_moved(3, 7, 1, 5, Queen, True)
         self.assertEqual(self.game.in_check, Colour.BLACK)
+        self.assertTrue(self.game.is_checkmate)
         # Check that no pieces have legal moves
         for row in range(8):
             for col in range(8):
@@ -200,7 +201,7 @@ class TestChessGameFlow(BaseTestChessGame):
         self.move_piece(1, 5, 3, 5)
         self.assertFalse(self.game.is_checkmate)
         # 3W. Qh5# -> (7, 3) -> (3, 7)
-        self.move_piece(7, 3, 3, 7)
+        self.assert_piece_moved(7, 3, 3, 7, Queen, True)
         # self.game.print_board()
         # Check that Black is in check
         self.assertEqual(self.game.in_check, Colour.BLACK)

@@ -64,12 +64,37 @@ class GameState:
         """Returns True if the square contains a piece of the current player's colour."""
         return self.board[row][col] and self.board[row][col].colour == self.turn
 
-    def get_valid_moves(self, row: int, col: int) -> List[Move]:
+    def get_valid_moves(self, row: int, col: int, simulate: bool = False) -> List[Move]:
         """Returns a list of valid moves for a selected piece."""
         piece = self.board[row][col]
         if not piece or piece.colour != self.turn:
             return []
-        return piece.get_valid_moves(self.board)
+        possible_moves: List[Move] = piece.get_valid_moves(self.board)
+        if simulate:
+            return possible_moves
+
+        moves = []
+        # Only allow moves that do not put the current player in check
+        for move in possible_moves:
+            new_row, new_col = move.to_row, move.to_col
+            # Simulate the move
+            # Store whatever was in the destination
+            original_piece = self.board[new_row][new_col]
+            self.board[new_row][new_col] = piece
+            self.board[row][col] = None
+            piece.set_position(new_row, new_col)
+            self.swap_turn()
+
+            if not self.is_king_in_check(piece.colour):
+                moves.append(move)
+
+            # Undo the move
+            self.board[row][col] = piece
+            self.board[new_row][new_col] = original_piece
+            piece.set_position(row, col)
+            self.swap_turn()
+
+        return moves
 
     def move_piece(self, move: Move) -> None:
         piece = self.board[move.from_row][move.from_col]
@@ -118,22 +143,23 @@ class GameState:
             for col in range(8):
                 piece = self.board[row][col]
                 if piece and piece.colour == opponent_colour:
-                    if Move.contains_move(self.get_valid_moves(row, col), king_position[0], king_position[1]):
+                    if Move.contains_move(self.get_valid_moves(row, col, simulate=True), king_position[0], king_position[1]):
                         return True
         return False
 
     def is_checkmate_position(self, colour: Colour) -> bool:
         """Returns True if the given color is in checkmate, False otherwise."""
-        if not self.is_king_in_check(colour):
+        if not self.in_check and self.in_check != colour:
             return False
 
         # Check if the player has any legal moves left
         for row in range(8):
             for col in range(8):
                 piece = self.board[row][col]
-                # Any valid moves?
-                if self.get_valid_moves(row, col):
-                    return False
+                if piece and piece.colour == colour:
+                    # Any valid moves?
+                    if self.get_valid_moves(row, col):
+                        return False
         return True
 
     def print_board(self) -> None:
