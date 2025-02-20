@@ -70,10 +70,15 @@ class GameState:
         if not piece or piece.colour != self.turn:
             return []
         possible_moves: List[Move] = piece.get_valid_moves(self.board)
-        # Add en passant move(s) if applicable
+        # Add en passant move if applicable
         if isinstance(piece, Pawn) and self.enpassant_square:
             piece.add_enpassant(
                 self.board, self.enpassant_square, possible_moves)
+
+        # Add castling move(s) if applicable
+        if isinstance(piece, King) and (self.castling_rights[self.turn]['kingside'] or self.castling_rights[self.turn]['queenside']):
+            piece.add_castling(
+                self.board, self.castling_rights[self.turn], possible_moves)
 
         if simulate:
             return possible_moves
@@ -115,6 +120,13 @@ class GameState:
 
             # Update the en-passant square
             self.update_enpassant_square(move)
+
+            # Update castling rights based on move
+            self.update_castling_rights(move)
+
+            # Move Rook if the move is a castle
+            if move.piece_type == PieceType.KING and move.castling:
+                self.update_castled_rook(move)
 
             # Is opponent in check?
             opponent = Colour.BLACK if self.turn == Colour.WHITE else Colour.WHITE
@@ -180,6 +192,51 @@ class GameState:
             self.enpassant_square = (move.from_row + direction, move.to_col)
         else:
             self.enpassant_square = None
+
+    def update_castling_rights(self, move: Move):
+        # If the King moves, then castling rights are denied
+        if move.piece_type == PieceType.KING:
+            self.castling_rights[self.turn]['kingside'] = False
+            self.castling_rights[self.turn]['queenside'] = False
+        # If the rook moves...
+        elif move.piece_type == PieceType.ROOK:
+            # If castling is currently allowed, but the kingside rook has moved
+            if self.castling_rights[self.turn]['kingside'] and move.from_col == 7:
+                # Deny right to castle kingside
+                self.castling_rights[self.turn]['kingside'] = False
+            # If castling is currently allowed, but the queenside rook has moved
+            elif self.castling_rights[self.turn]['queenside'] and move.from_col == 0:
+                # Deny right to castle queenside
+                self.castling_rights[self.turn]['queenside'] = False
+
+    def update_castled_rook(self, move: Move):
+        # We know this is a King move already, and that it is a castling move.
+        if move.castling == 'kingside':
+            # Kingside white
+            if self.turn == Colour.WHITE:
+                rook = self.board[7][7]
+                self.board[7][7] = None
+                self.board[7][5] = rook
+                rook.set_position(7, 5)
+            # Kingside black
+            else:
+                rook = self.board[0][7]
+                self.board[0][7] = None
+                self.board[0][5] = rook
+                rook.set_position(0, 5)
+        else:
+            # Queenside white
+            if self.turn == Colour.WHITE:
+                rook = self.board[7][0]
+                self.board[7][0] = None
+                self.board[7][3] = rook
+                rook.set_position(7, 3)
+            # Kingside black
+            else:
+                rook = self.board[0][0]
+                self.board[0][0] = None
+                self.board[0][3] = rook
+                rook.set_position(0, 3)
 
     def print_board(self) -> None:
         """Prints the board to the terminal. For debugging purposes."""

@@ -211,3 +211,41 @@ class TestKingMovement(BaseTestPieceMovement):
         self.assert_number_of_moves(4, 4, 7)
         self.game.board[3][3] = Pawn(Colour.WHITE, 3, 3)
         self.assert_number_of_moves(4, 4, 6)
+
+    def test_kingside_castle(self):
+        # Remove bishop and knight in the way of castling
+        self.game.board[7][5] = None
+        # Ensure that castling is not possible (knight in the way)
+        self.assert_move_not_possible(7, 4, 7, 6)
+        self.game.board[7][6] = None
+        # Ensure that castling kingside is possible
+        self.assert_move_possible(7, 4, 7, 6)
+        # Ensure that castling queenside is not possible
+        self.assert_move_not_possible(7, 4, 7, 2)
+
+    def test_queenside_castle(self):
+        # Remove queen, bishop, and knight in the way of castling
+        self.game.board[7][3] = None
+        # Ensure that castling is not possible (bishop and knight in the way)
+        self.assert_move_not_possible(7, 4, 7, 2)
+        self.game.board[7][2] = None
+        # Ensure that castling is not possible (knight in the way)
+        self.assert_move_not_possible(7, 4, 7, 2)
+        self.game.board[7][1] = None
+        # Ensure that castling queenside is possible
+        self.assert_move_possible(7, 4, 7, 2)
+        # Ensure that castling kingside is not possible
+        self.assert_move_not_possible(7, 4, 7, 6)
+
+    def test_cannot_castle_through_check(self):
+        self.empty_board()
+        self.game.board[0][4] = King(Colour.BLACK, 0, 4)
+        self.game.board[7][4] = King(Colour.WHITE, 7, 4)
+        # Add the rook so the white king can castle queenside
+        self.game.board[7][0] = Rook(Colour.WHITE, 7, 0)
+        # Check that the king can castle queenside
+        self.assert_move_possible(7, 4, 7, 2)
+        # Add a black rook at (4, 3), attacking (7, 3)
+        self.game.board[4][3] = Rook(Colour.BLACK, 4, 3)
+        # Check that queenside castling is not possible
+        self.assert_move_not_possible(7, 4, 7, 2)

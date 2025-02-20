@@ -214,3 +214,66 @@ class TestChessGameFlow(BaseTestChessGame):
                     self.assert_number_of_moves(row, col, 0)
         # Ensure that the checkmate flag is now set
         self.assertTrue(self.game.is_checkmate)
+
+    def test_castling_rights_after_king_move(self):
+        # Remove the Bishop and Knight stopping the ability to castle kingside, and the queen (so that the king can move left)
+        self.game.board[7][5] = None
+        self.game.board[7][6] = None
+        self.game.board[7][3] = None
+        # Make sure that castling kingside is possible
+        self.assert_move_possible(7, 4, 7, 6)
+        # Move the white king
+        self.move_piece(7, 4, 7, 3)
+        # Move a black pawn (so that it is white's move)
+        self.move_piece(1, 0, 2, 0)
+        # Ensure that castling kingside is no longer a possible move
+        self.assert_move_not_possible(7, 3, 7, 6)
+        # Check that white has no castling rights
+        self.assertFalse(self.game.castling_rights[Colour.WHITE]['kingside'])
+        self.assertFalse(self.game.castling_rights[Colour.WHITE]['queenside'])
+        # Check that black does still have castling rights
+        self.assertTrue(self.game.castling_rights[Colour.BLACK]['kingside'])
+        self.assertTrue(self.game.castling_rights[Colour.BLACK]['queenside'])
+
+    def test_castling_rights_after_rook_move(self):
+        # Remove all pieces other than rooks and king from the 7th row, so that king can castle either side
+        self.game.board[7][1] = None
+        self.game.board[7][2] = None
+        self.game.board[7][3] = None
+        self.game.board[7][5] = None
+        self.game.board[7][6] = None
+        # Check that white has both castling rights
+        self.assertTrue(self.game.castling_rights[Colour.WHITE]['kingside'])
+        self.assertTrue(self.game.castling_rights[Colour.WHITE]['queenside'])
+        # Check that white king's moves include castling either side
+        self.assert_move_possible(7, 4, 7, 2)
+        self.assert_move_possible(7, 4, 7, 6)
+        # Move queenside rook
+        self.move_piece(7, 0, 7, 1)
+        self.game.swap_turn()
+        # Ensure that White can still castle Kingside, but not Queenside
+        self.assert_move_not_possible(7, 4, 7, 2)
+        self.assert_move_possible(7, 4, 7, 6)
+        self.assertTrue(self.game.castling_rights[Colour.WHITE]['kingside'])
+        self.assertFalse(self.game.castling_rights[Colour.WHITE]['queenside'])
+
+    def test_castle_kingside(self):
+        # Remove pieces preventing castling
+        self.game.board[7][5] = None
+        self.game.board[7][6] = None
+        # Perform castle kingside
+        self.assert_piece_moved(7, 4, 7, 6, King)
+        # Ensure that the Rook has also moved
+        self.assertIsNone(self.game.board[7][7])
+        self.assertIsInstance(self.game.board[7][5], Rook)
+
+    def test_castle_queenside(self):
+        # Remove pieces preventing castling
+        self.game.board[7][1] = None
+        self.game.board[7][2] = None
+        self.game.board[7][3] = None
+        # Perform castle kingside
+        self.assert_piece_moved(7, 4, 7, 2, King)
+        # Ensure that the Rook has also moved
+        self.assertIsNone(self.game.board[7][0])
+        self.assertIsInstance(self.game.board[7][3], Rook)

@@ -70,7 +70,7 @@ class Pawn(Piece):
 
     def add_enpassant(self, board: List[List[Optional[Piece]]], enpassant_square: Tuple[int, int], moves: List[Move]):
         """
-        Adds the possible en-passant move(s) for the current board state.
+        Adds the possible en-passant move for the current board state.
 
         :param board: The current board state
         :param enpassant_square: A tuple of (row, col) position of the current en_passant square
@@ -210,3 +210,48 @@ class King(Piece):
             else:
                 continue
         return moves
+
+    def add_castling(self, board: List[List[Optional[Piece]]], castling_rights: dict, moves: List[Move]):
+        """
+        Adds the possible castling moves for the current board state.
+
+        :param board: The current board state
+        :param castling_rights: A dictionary with elements 'kingside' and 'queenside' with boolean values indicating
+            whether castling in that direction is available.
+        :param moves: The list of Move objects to add the en-passant moves to 
+        """
+        row = 0 if self.colour == Colour.BLACK else 7
+        possible_moves = []
+        if castling_rights['kingside']:
+            # Check that the pieces between the king and rook have moved
+            # TODO: Check if the piece moved through check
+            if board[row][5] is None and board[row][6] is None and self.row == row and self.col == 4 and board[row][7] and board[row][7].piece_type == PieceType.ROOK:
+                possible_moves.append(Move(self.row, self.col, row, 6,
+                                           self.piece_type, castling='kingside'))
+                through_square = (self.row, 5)
+        if castling_rights['queenside']:
+            # Check the pieces between the king and rook have moved
+            # TODO: Check if the piece moved through check
+            if board[row][3] is None and board[row][2] is None and board[row][1] is None and self.row == row and self.col == 4 and board[row][0] and board[row][0].piece_type == PieceType.ROOK:
+                possible_moves.append(Move(self.row, self.col, row, 2,
+                                           self.piece_type, castling='queenside'))
+                through_square = (self.row, 3)
+
+        for move in possible_moves:
+            try:
+                for row in range(8):
+                    for col in range(8):
+                        piece = board[row][col]
+                        if piece and piece.colour != self.colour:
+                            piece_moves = piece.get_valid_moves(board)
+                            move_targets = [(move.to_row, move.to_col)
+                                            for move in piece_moves]
+                            if through_square in move_targets:
+                                raise BreakLoop
+                moves.append(move)
+            except BreakLoop:
+                pass
+
+
+class BreakLoop(Exception):
+    pass
