@@ -73,38 +73,41 @@ class TestPawnMovement(BaseTestPieceMovement):
         self.assert_number_of_moves(6, 0, 0)
 
     # En-passant tests
-    # def test_en_passant_possible(self):
-    #     # Test that en passant is set up correctly when a pawn moves two squares.
-    #     self.empty_board()
-    #     self.game.board[6][4] = Pawn(Colour.WHITE, 6, 4)
-    #     self.game.board[4][3] = Pawn(Colour.BLACK, 4, 3)
-    #     self.game.board[0][4] = King(Colour.BLACK, 0, 4)
-    #     self.game.board[7][4] = King(Colour.WHITE, 7, 4)
-    #     # White pawn moves e2 -> e4
-    #     self.move_piece(6, 4, 4, 4)
-    #     # En passant should now be possible at e3 (5, 4)
-    #     self.assert_move_possible(4, 3, 5, 4)
-    #     self.assertEqual(self.game.enpassant_square, (5, 4))
+    def test_en_passant_possible(self):
+        # Test that en passant is set up correctly when a pawn moves two squares.
+        self.empty_board()
+        self.game.board[6][4] = Pawn(Colour.WHITE, 6, 4)
+        self.game.board[4][3] = Pawn(Colour.BLACK, 4, 3)
+        self.game.board[0][4] = King(Colour.BLACK, 0, 4)
+        self.game.board[7][4] = King(Colour.WHITE, 7, 4)
+        # White pawn moves e2 -> e4
+        self.move_piece(6, 4, 4, 4)
+        print()
+        self.game.print_board()
+        print(self.game.enpassant_square)
+        # En passant should now be possible at e3 (5, 4)
+        self.assert_move_possible(4, 3, 5, 4)
+        self.assertEqual(self.game.enpassant_square, (5, 4))
 
-    # def test_en_passant_expires(self):
-    #     self.empty_board()
-    #     self.game.board[6][4] = Pawn(Colour.WHITE, 6, 4)
-    #     self.game.board[4][3] = Pawn(Colour.BLACK, 4, 3)
-    #     self.game.board[7][0] = Pawn(Colour.WHITE, 7, 0)
-    #     self.game.board[0][4] = King(Colour.BLACK, 0, 4)
-    #     self.game.board[7][4] = King(Colour.WHITE, 7, 4)
-    #     # White pawn moves e2 -> e4
-    #     self.move_piece(6, 4, 4, 4)
-    #     # En passant should be possible
-    #     self.assertEqual(self.game.enpassant_square, (5, 4))
-    #     self.assert_move_possible(4, 3, 5, 4)
-    #     # Change player turn back to white
-    #     self.game.turn = Colour.WHITE
-    #     # Another move happens instead (white moves another piece)
-    #     self.move_piece(7, 0, 6, 0)
-    #     # En passant should expire
-    #     self.assertIsNone(self.game.enpassant_square)
-    #     self.assert_move_not_possible(4, 3, 5, 4)
+    def test_en_passant_expires(self):
+        self.empty_board()
+        self.game.board[6][4] = Pawn(Colour.WHITE, 6, 4)
+        self.game.board[4][3] = Pawn(Colour.BLACK, 4, 3)
+        self.game.board[7][0] = Pawn(Colour.WHITE, 7, 0)
+        self.game.board[0][4] = King(Colour.BLACK, 0, 4)
+        self.game.board[7][4] = King(Colour.WHITE, 7, 4)
+        # White pawn moves e2 -> e4
+        self.move_piece(6, 4, 4, 4)
+        # En passant should be possible
+        self.assertEqual(self.game.enpassant_square, (5, 4))
+        self.assert_move_possible(4, 3, 5, 4)
+        # Change player turn back to white
+        self.game.turn = Colour.WHITE
+        # Another move happens instead (white moves another piece)
+        self.move_piece(7, 0, 6, 0)
+        # En passant should expire
+        self.assertIsNone(self.game.enpassant_square)
+        self.assert_move_not_possible(4, 3, 5, 4)
 
 
 class TestRookMovement(BaseTestPieceMovement):

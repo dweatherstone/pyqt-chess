@@ -1,7 +1,7 @@
 from PyQt6.QtGui import QPixmap
 from chess_game.enums import Colour, PieceType
 from chess_game.move import Move
-from typing import Optional, List
+from typing import Optional, List, Tuple
 
 
 class Piece:
@@ -67,6 +67,21 @@ class Pawn(Piece):
                          self.piece_type, captured_piece=board[self.row + direction][self.col + 1]))
 
         return moves
+
+    def add_enpassant(self, board: List[List[Optional[Piece]]], enpassant_square: Tuple[int, int], moves: List[Move]):
+        """
+        Adds the possible en-passant move(s) for the current board state.
+
+        :param board: The current board state
+        :param enpassant_square: A tuple of (row, col) position of the current en_passant square
+        :param moves: The list of Move objects to add the en-passant moves to 
+        """
+        # White moves up, black moves down
+        direction = -1 if self.colour == Colour.WHITE else 1
+        (ep_row, ep_col) = enpassant_square
+        if self.row + direction == ep_row and ((self.col > 0 and self.col - 1 == ep_col) or (self.col < 7 and self.col + 1 == ep_col)):
+            moves.append(Move(self.row, self.col, self.row + direction, ep_col,
+                         self.piece_type, captured_piece=board[ep_row][ep_col], en_passant=True))
 
 
 class Bishop(Piece):

@@ -19,9 +19,10 @@ class BaseTestChessGame(unittest.TestCase):
             Colour.BLACK, black_king_row, black_king_col)
 
     def move_piece(self, old_row: int, old_col: int, new_row: int, new_col: int):
-        move = Move(old_row, old_col, new_row, new_col,
-                    self.game.board[old_row][old_col].piece_type)
-        self.game.move_piece(move)
+        moves = self.game.get_valid_moves(old_row, old_col)
+        for move in moves:
+            if move.to_row == new_row and move.to_col == new_col:
+                self.game.move_piece(move)
 
     def get_moves(self, row: int, col: int):
         return self.game.get_valid_moves(row, col)
@@ -67,21 +68,21 @@ class TestChessGameFlow(BaseTestChessGame):
         self.assert_piece_moved(6, 0, 5, 1, Pawn)
         self.assertIsNone(self.game.board[5][0])
 
-    # def test_en_passant_capture(self):
-    #     # Test that en passant capture works correctly
-    #     self.empty_board()
-    #     self.game.board[6][4] = Pawn(Colour.WHITE, 6, 4)
-    #     self.game.board[4][3] = Pawn(Colour.BLACK, 4, 3)
-    #     # White pawn moves e2 -> e4
-    #     self.move_piece(6, 4, 4, 4)
-    #     # Black pawn should have en passant as a possible move
-    #     self.assert_move_possible(4, 3, 5, 4)
-    #     # Black pawn captures en passant
-    #     self.assert_piece_moved(4, 3, 5, 4, Pawn)
-    #     # White pawn should be removed from e4
-    #     self.assertIsNone(self.game.board[4][4])
-    #     # Black pawn should be on e3
-    #     self.assertEqual(self.game.board[5][4].colour, Colour.BLACK)
+    def test_en_passant_capture(self):
+        # Test that en passant capture works correctly
+        self.empty_board()
+        self.game.board[6][4] = Pawn(Colour.WHITE, 6, 4)
+        self.game.board[4][3] = Pawn(Colour.BLACK, 4, 3)
+        # White pawn moves e2 -> e4
+        self.move_piece(6, 4, 4, 4)
+        # Black pawn should have en passant as a possible move
+        self.assert_move_possible(4, 3, 5, 4)
+        # Black pawn captures en passant
+        self.assert_piece_moved(4, 3, 5, 4, Pawn)
+        # White pawn should be removed from e4
+        self.assertIsNone(self.game.board[4][4])
+        # Black pawn should be on e3
+        self.assertEqual(self.game.board[5][4].colour, Colour.BLACK)
 
     def test_is_in_check(self):
         self.empty_board(7, 4, 2, 3)

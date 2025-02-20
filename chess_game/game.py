@@ -70,6 +70,11 @@ class GameState:
         if not piece or piece.colour != self.turn:
             return []
         possible_moves: List[Move] = piece.get_valid_moves(self.board)
+        # Add en passant move(s) if applicable
+        if isinstance(piece, Pawn) and self.enpassant_square:
+            piece.add_enpassant(
+                self.board, self.enpassant_square, possible_moves)
+
         if simulate:
             return possible_moves
 
@@ -103,6 +108,13 @@ class GameState:
             self.board[move.to_row][move.to_col] = piece
             self.board[move.from_row][move.from_col] = None
             piece.set_position(move.to_row, move.to_col)
+
+            # Remove taken pawn when move is en-passant take
+            if move.en_passant:
+                self.board[move.from_row][move.to_col] = None
+
+            # Update the en-passant square
+            self.update_enpassant_square(move)
 
             # Is opponent in check?
             opponent = Colour.BLACK if self.turn == Colour.WHITE else Colour.WHITE
@@ -161,6 +173,13 @@ class GameState:
                     if self.get_valid_moves(row, col):
                         return False
         return True
+
+    def update_enpassant_square(self, move: Move):
+        if move.piece_type == PieceType.PAWN and abs(move.from_row - move.to_row) == 2:
+            direction = -1 if self.turn == Colour.WHITE else 1
+            self.enpassant_square = (move.from_row + direction, move.to_col)
+        else:
+            self.enpassant_square = None
 
     def print_board(self) -> None:
         """Prints the board to the terminal. For debugging purposes."""
