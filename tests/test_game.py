@@ -1,7 +1,8 @@
 import unittest
 from chess_game.game import GameState
-from chess_game.pieces import Pawn, Rook, Bishop, Queen, King, Colour
+from chess_game.pieces import Pawn, Rook, Knight, Queen, King, Colour
 from chess_game.move import Move
+from chess_game.enums import PieceType
 
 
 class BaseTestChessGame(unittest.TestCase):
@@ -26,6 +27,10 @@ class BaseTestChessGame(unittest.TestCase):
 
     def get_moves(self, row: int, col: int):
         return self.game.get_valid_moves(row, col)
+
+    def get_move_from_target(self, from_row: int, from_col: int, to_row: int, to_col: int) -> Move:
+        moves = self.game.get_valid_moves(from_row, from_col)
+        return Move.get_move_from_list(moves, to_row, to_col)
 
     def assert_move_possible(self, row: int, col: int, target_row: int, target_col: int):
         moves = [(move.to_row, move.to_col)
@@ -277,3 +282,45 @@ class TestChessGameFlow(BaseTestChessGame):
         # Ensure that the Rook has also moved
         self.assertIsNone(self.game.board[7][0])
         self.assertIsInstance(self.game.board[7][3], Rook)
+
+    def test_pawn_promotion(self):
+        self.empty_board(6, 4, 1, 4)
+        self.game.board[1][0] = Pawn(Colour.WHITE, 1, 0)
+        self.game.board[6][0] = Pawn(Colour.BLACK, 6, 0)
+        self.game.board[7][1] = Knight(Colour.WHITE, 7, 1)
+        # Test that a plain Queen promotion works for the White pawn
+        move = Move(1, 0, 0, 0, PieceType.PAWN)
+        moves = self.get_moves(1, 0)
+        self.assertIn(move, moves)
+        move = self.get_move_from_target(1, 0, 0, 0)
+        self.assertIsNotNone(move)
+        self.assertTrue(self.game.is_promotion_move(move))
+        promotion_piece = PieceType.from_name("Queen")
+        self.assertEquals(promotion_piece, PieceType.QUEEN)
+        move.promotion = promotion_piece
+        # self.move_piece(1, 0, 0, 0)
+        self.game.move_piece(move)
+        self.assertEqual(self.game.board[0][0].piece_type, PieceType.QUEEN)
+        self.assertIsInstance(self.game.board[0][0], Queen)
+        self.assertEqual(self.game.board[0][0].colour, Colour.WHITE)
+        self.assertIsNone(self.game.board[1][0])
+        self.assertFalse(self.game.is_checkmate)
+
+        # Test that a promotion to a queen and capture is possible
+        move = Move(6, 0, 7, 1, PieceType.PAWN,
+                    captured_piece=self.game.board[7][1])
+        moves = self.get_moves(6, 0)
+        self.assertIn(move, moves)
+        move = self.get_move_from_target(6, 0, 7, 1)
+        self.assertIsNotNone(move)
+        self.assertTrue(self.game.is_promotion_move(move))
+        promotion_piece = PieceType.from_name("Queen")
+        self.assertEquals(promotion_piece, PieceType.QUEEN)
+        move.promotion = promotion_piece
+        # self.move_piece(6, 0, 7, 1)
+        self.game.move_piece(move)
+        self.assertEqual(self.game.board[7][1].piece_type, PieceType.QUEEN)
+        self.assertIsInstance(self.game.board[7][1], Queen)
+        self.assertEqual(self.game.board[7][1].colour, Colour.BLACK)
+        self.assertIsNone(self.game.board[6][0])
+        self.assertFalse(self.game.is_checkmate)

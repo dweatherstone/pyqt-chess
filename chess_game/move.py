@@ -32,6 +32,21 @@ class Move:
     def __repr__(self):
         return f"Move({self.from_row}, {self.from_col}) -> ({self.to_row}, {self.to_col})"
 
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, Move):
+            return False
+        return (
+            self.from_row == other.from_row and
+            self.from_col == other.from_col and
+            self.to_row == other.to_row and
+            self.to_col == other.to_col and
+            self.piece_type == other.piece_type and
+            self.captured_piece == other.captured_piece and
+            self.en_passant == other.en_passant and
+            self.castling == other.castling and
+            self.promotion == other.promotion
+        )
+
     def is_equal(self, row: int, col: int) -> bool:
         return self.to_row == row and self.to_col == col
 

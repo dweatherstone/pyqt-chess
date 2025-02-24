@@ -1,10 +1,11 @@
-from PyQt6.QtWidgets import QWidget, QGridLayout, QLabel, QMessageBox
+from PyQt6.QtWidgets import QWidget, QGridLayout, QLabel, QMessageBox, QDialog, QVBoxLayout, QHBoxLayout, QPushButton
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QMouseEvent
+from PyQt6.QtGui import QMouseEvent, QIcon
 from typing import Optional, Tuple, List
 from chess_game.game import GameState
 from chess_game.move import Move
-from chess_game.pieces import Piece
+from chess_game.pieces import Piece, Queen, Rook, Bishop, Knight
+from chess_game.enums import PieceType
 
 
 class ChessBoard(QWidget):
@@ -76,6 +77,9 @@ class ChessBoard(QWidget):
                             if move is None:
                                 raise ValueError(
                                     f"Move cannot be found: ({self.selected_piece[0]}, {self.selected_piece[1]}) -> ({row}, {col})")
+                            if self.game_state.is_promotion_move(move):
+                                if not self.choose_promotion_piece(move):
+                                    return
                             # Make the move here
                             self.game_state.move_piece(move)
                             # Remove all pieces from labels
@@ -106,6 +110,23 @@ class ChessBoard(QWidget):
         else:
             self.clear_selection()
 
+    def choose_promotion_piece(self, move: Move):
+        # print("Do something to choose a promotion piece")
+        dialog = PromotionDialog(self, colour=self.game_state.turn)
+        result = dialog.exec()  # Show the dialog
+
+        if result == QDialog.DialogCode.Accepted:
+            chosen_piece = dialog.get_selected_piece()
+            piece_type = PieceType.from_name(chosen_piece)
+            if piece_type:
+                move.promotion = piece_type
+                return True
+            else:
+                raise ValueError("Could not find the piece type!")
+        else:
+            print("Player cancelled the promotion")
+            return False
+
     def clear_selection(self) -> None:
         """Clears the current selection, once a move has been made."""
         self.selected_piece = None
@@ -118,3 +139,58 @@ class ChessBoard(QWidget):
         for row in range(8):
             for col in range(8):
                 self.labels[row][col].clear()
+
+
+class PromotionDialog(QDialog):
+    def __init__(self, parent=None, colour=None):
+        super().__init__(parent)
+        self.setWindowTitle("Pawn Promotion")
+        # Makes this dialog block interactions with the main window
+        self.setModal(True)
+        self.setFixedSize(500, 200)
+
+        self.selected_piece = None  # Store the selected piece type
+
+        # Layout
+        layout = QVBoxLayout(self)
+        label = QLabel("Choose a piece for promotion:")
+        layout.addWidget(label, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        # Horizontal layout for the buttons
+        button_layout = QHBoxLayout()
+
+        # Create buttons with images for each promotion option
+        self.pieces = {
+            "Queen": Queen(colour, 0, 0),
+            "Rook": Rook(colour, 0, 0),
+            "Bishop": Bishop(colour, 0, 0),
+            "Knight": Knight(colour, 0, 0)
+        }
+
+        for name, piece in self.pieces.items():
+            btn = QPushButton()
+            btn.setIcon(QIcon(piece.get_pixmap()))
+            btn.setIconSize(piece.get_pixmap().size())
+            btn.setFixedSize(100, 100)
+            btn.setStyleSheet(
+                "QPushButton { border: 2px solid black; }")
+            # Capture piece type
+            btn.clicked.connect(lambda checked, p=name: self.select_piece(p))
+            button_layout.addWidget(btn)
+
+        layout.addLayout(button_layout)
+
+        # Cancel button
+        cancel_btn = QPushButton("Cancel")
+        # Closes dialog without selection
+        cancel_btn.clicked.connect(self.reject)
+        layout.addWidget(cancel_btn, alignment=Qt.AlignmentFlag.AlignHCenter)
+
+    def select_piece(self, piece_name):
+        """Set the selected piece type and close dialog."""
+        self.selected_piece = piece_name
+        self.accept()
+
+    def get_selected_piece(self):
+        """Return the chosen piece type."""
+        return self.selected_piece

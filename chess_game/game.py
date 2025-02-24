@@ -110,9 +110,14 @@ class GameState:
         piece = self.board[move.from_row][move.from_col]
         if piece and piece.colour == self.turn:
             # Move piece to new position
-            self.board[move.to_row][move.to_col] = piece
+            if move.promotion:
+                new_piece = self.create_piece(
+                    self.turn, move.promotion, move.to_row, move.to_col)
+                self.board[move.to_row][move.to_col] = new_piece
+            else:
+                self.board[move.to_row][move.to_col] = piece
+                piece.set_position(move.to_row, move.to_col)
             self.board[move.from_row][move.from_col] = None
-            piece.set_position(move.to_row, move.to_col)
 
             # Remove taken pawn when move is en-passant take
             if move.en_passant:
@@ -126,7 +131,7 @@ class GameState:
 
             # Move Rook if the move is a castle
             if move.piece_type == PieceType.KING and move.castling:
-                self.update_castled_rook(move)
+                self.move_castled_rook(move)
 
             # Is opponent in check?
             opponent = Colour.BLACK if self.turn == Colour.WHITE else Colour.WHITE
@@ -186,6 +191,14 @@ class GameState:
                         return False
         return True
 
+    def is_promotion_move(self, move: Move) -> bool:
+        if not move.piece_type == PieceType.PAWN:
+            return False
+        if self.turn == Colour.WHITE:
+            return move.from_row == 1
+        else:
+            return move.from_row == 6
+
     def update_enpassant_square(self, move: Move):
         if move.piece_type == PieceType.PAWN and abs(move.from_row - move.to_row) == 2:
             direction = -1 if self.turn == Colour.WHITE else 1
@@ -209,7 +222,7 @@ class GameState:
                 # Deny right to castle queenside
                 self.castling_rights[self.turn]['queenside'] = False
 
-    def update_castled_rook(self, move: Move):
+    def move_castled_rook(self, move: Move):
         # We know this is a King move already, and that it is a castling move.
         if move.castling == 'kingside':
             # Kingside white
