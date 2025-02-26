@@ -82,9 +82,6 @@ class TestPawnMovement(BaseTestPieceMovement):
         self.game.board[7][4] = King(Colour.WHITE, 7, 4)
         # White pawn moves e2 -> e4
         self.move_piece(6, 4, 4, 4)
-        print()
-        self.game.print_board()
-        print(self.game.enpassant_square)
         # En passant should now be possible at e3 (5, 4)
         self.assert_move_possible(4, 3, 5, 4)
         self.assertEqual(self.game.enpassant_square, (5, 4))

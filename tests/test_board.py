@@ -3,7 +3,7 @@ from PyQt6.QtTest import QTest
 from PyQt6.QtCore import Qt
 import sys
 import unittest
-from chess_game.board import ChessBoard, PromotionDialog
+from ui.board import ChessBoard, PromotionDialog
 from chess_game.enums import Colour
 
 

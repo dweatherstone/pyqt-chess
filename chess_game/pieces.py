@@ -180,8 +180,12 @@ class Queen(Piece):
     def get_valid_moves(self, board: List[List[Optional[Piece]]]) -> List[Move]:
         rook_moves = Rook(self.colour, self.row,
                           self.col).get_valid_moves(board)
+        for move in rook_moves:
+            move.piece_type = PieceType.QUEEN
         bishop_moves = Bishop(self.colour, self.row,
                               self.col).get_valid_moves(board)
+        for move in bishop_moves:
+            move.piece_type = PieceType.QUEEN
         return rook_moves + bishop_moves
 
 

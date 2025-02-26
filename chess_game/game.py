@@ -19,6 +19,7 @@ class GameState:
             Colour.WHITE: (7, 4),
             Colour.BLACK: (0, 4),
         }
+        self.history: List[Move] = []
 
     def create_initial_board(self) -> List[List[Optional[Piece]]]:
         """Initialises the board with Piece objects."""
@@ -146,6 +147,8 @@ class GameState:
             # Check if the opponent is in checkmate
             if self.is_checkmate_position(self.turn):
                 self.is_checkmate = True
+
+            self.history.append(move)
 
     def swap_turn(self) -> None:
         """Swaps the current player turn after a move is made."""

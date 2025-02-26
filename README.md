@@ -7,3 +7,4 @@
   - ~~When allowing castling move, check that none of the squares in between will be in check~~
 - Use the GameStatus.king_positions dictionary for checking for in check/checkmate
 - Think about moving some logic to the Rules.py file. This will be things like Castling/En Passant logic
+- Use try/except with a `BreakLoop` exception class where required. For example, when finding the king position.

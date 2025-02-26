@@ -296,7 +296,7 @@ class TestChessGameFlow(BaseTestChessGame):
         self.assertIsNotNone(move)
         self.assertTrue(self.game.is_promotion_move(move))
         promotion_piece = PieceType.from_name("Queen")
-        self.assertEquals(promotion_piece, PieceType.QUEEN)
+        self.assertEqual(promotion_piece, PieceType.QUEEN)
         move.promotion = promotion_piece
         # self.move_piece(1, 0, 0, 0)
         self.game.move_piece(move)
@@ -315,7 +315,7 @@ class TestChessGameFlow(BaseTestChessGame):
         self.assertIsNotNone(move)
         self.assertTrue(self.game.is_promotion_move(move))
         promotion_piece = PieceType.from_name("Queen")
-        self.assertEquals(promotion_piece, PieceType.QUEEN)
+        self.assertEqual(promotion_piece, PieceType.QUEEN)
         move.promotion = promotion_piece
         # self.move_piece(6, 0, 7, 1)
         self.game.move_piece(move)

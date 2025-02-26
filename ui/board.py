@@ -1,30 +1,51 @@
-from PyQt6.QtWidgets import QWidget, QGridLayout, QLabel, QMessageBox, QDialog, QVBoxLayout, QHBoxLayout, QPushButton
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QMouseEvent, QIcon
+from PyQt6.QtWidgets import QWidget, QGridLayout, QLabel, QMessageBox, QDialog
+from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtGui import QMouseEvent
 from typing import Optional, Tuple, List
+from ui.promotion_dialog import PromotionDialog
 from chess_game.game import GameState
 from chess_game.move import Move
-from chess_game.pieces import Piece, Queen, Rook, Bishop, Knight
+from chess_game.pieces import Piece
 from chess_game.enums import PieceType
 
 
 class ChessBoard(QWidget):
-    def __init__(self, game_state: GameState):
+    move_made = pyqtSignal()
+
+    def __init__(self):
         super().__init__()
 
         # Store reference to game logic
-        self.game_state = game_state
+        self.game_state = GameState()
+        self.initialise_board()
 
-        # Set up the layout of the board
-        self.gridLayoutBoard = QGridLayout(self)
-        self.gridLayoutBoard.setSpacing(0)
+    def initialise_board(self):
+        """Set up the layout of the board."""
+        if not hasattr(self, 'gridLayoutBoard') or self.gridLayoutBoard is None:  # Only set layout if it's not already created
+            self.gridLayoutBoard = QGridLayout(self)
+            self.gridLayoutBoard.setSpacing(0)
 
-        self.labels: List[List[QLabel]] = [
-            [QLabel(self) for _ in range(8)] for _ in range(8)]
-        self.selected_piece: Tuple[int, int] = None  # Track selected piece
-        self.valid_moves: List[Move] = []  # Track valid moves for highlighting
+            self.labels: List[List[QLabel]] = [
+                [QLabel(self) for _ in range(8)] for _ in range(8)]
+            self.selected_piece: Tuple[int, int] = None  # Track selected piece
+            # Track valid moves for highlighting
+            self.valid_moves: List[Move] = []
+
+            self.setup_chessboard()
+            self.update()
+
+    def reset_board(self):
+        """Reset the board to its initial state"""
+        self.game_state = GameState()
+
+        # Clear existing piece images
+        for row in range(8):
+            for col in range(8):
+                self.labels[row][col].clear()
 
         self.setup_chessboard()
+        self.update()
+        self.repaint()
 
     def setup_chessboard(self):
         """Draws the board and pieces based on `self.game_state` state."""
@@ -46,6 +67,12 @@ class ChessBoard(QWidget):
         base_colour = "#DDB88C" if (row + col) % 2 == 0 else "#A66F4F"
         highlight_colour = "#77DD77"  # Light green for highlighting valid moves
         return f"background-color: {highlight_colour if highlight else base_colour};"
+
+    def print_board(self):
+        self.game_state.print_board()
+
+    def print_in_check(self):
+        self.game_state.print_in_check()
 
     def highlight_squares(self, squares: list) -> None:
         """Highlights the squares where a piece can move."""
@@ -87,6 +114,7 @@ class ChessBoard(QWidget):
                             self.clear_selection()
                             self.setup_chessboard()
                             self.update()
+                            self.move_made.emit()
                             # Check if the user is now in checkmate
                             if self.game_state.is_checkmate:
                                 QMessageBox.information(
@@ -139,58 +167,3 @@ class ChessBoard(QWidget):
         for row in range(8):
             for col in range(8):
                 self.labels[row][col].clear()
-
-
-class PromotionDialog(QDialog):
-    def __init__(self, parent=None, colour=None):
-        super().__init__(parent)
-        self.setWindowTitle("Pawn Promotion")
-        # Makes this dialog block interactions with the main window
-        self.setModal(True)
-        self.setFixedSize(500, 200)
-
-        self.selected_piece = None  # Store the selected piece type
-
-        # Layout
-        layout = QVBoxLayout(self)
-        label = QLabel("Choose a piece for promotion:")
-        layout.addWidget(label, alignment=Qt.AlignmentFlag.AlignCenter)
-
-        # Horizontal layout for the buttons
-        button_layout = QHBoxLayout()
-
-        # Create buttons with images for each promotion option
-        self.pieces = {
-            "Queen": Queen(colour, 0, 0),
-            "Rook": Rook(colour, 0, 0),
-            "Bishop": Bishop(colour, 0, 0),
-            "Knight": Knight(colour, 0, 0)
-        }
-
-        for name, piece in self.pieces.items():
-            btn = QPushButton()
-            btn.setIcon(QIcon(piece.get_pixmap()))
-            btn.setIconSize(piece.get_pixmap().size())
-            btn.setFixedSize(100, 100)
-            btn.setStyleSheet(
-                "QPushButton { border: 2px solid black; }")
-            # Capture piece type
-            btn.clicked.connect(lambda checked, p=name: self.select_piece(p))
-            button_layout.addWidget(btn)
-
-        layout.addLayout(button_layout)
-
-        # Cancel button
-        cancel_btn = QPushButton("Cancel")
-        # Closes dialog without selection
-        cancel_btn.clicked.connect(self.reject)
-        layout.addWidget(cancel_btn, alignment=Qt.AlignmentFlag.AlignHCenter)
-
-    def select_piece(self, piece_name):
-        """Set the selected piece type and close dialog."""
-        self.selected_piece = piece_name
-        self.accept()
-
-    def get_selected_piece(self):
-        """Return the chosen piece type."""
-        return self.selected_piece
